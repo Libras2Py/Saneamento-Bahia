@@ -283,26 +283,45 @@
       <!-- Footer -->
       <footer id="footer">
         <div class="inner">
-          <section>
-            <h2>Faça sua denúncia</h2>
-            <!-- Formulário Formspree - Substitua YOUR_FORM_ID pelo ID real -->
-            <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
-              <div class="fields">
-                <div class="field half">
-                  <input type="text" name="nome" id="nome" placeholder="Seu nome" required />
-                </div>
-                <div class="field half">
-                  <input type="email" name="email" id="email" placeholder="Seu e-mail" required />
-                </div>
-                <div class="field">
-                  <textarea name="mensagem" id="mensagem" placeholder="Descreva o problema: falta de água, esgoto a céu aberto, ponto de alagamento, descarte irregular, etc. Informe endereço, ponto de referência e, se possível, datas e fotos." required></textarea>
-                </div>
-              </div>
-              <ul class="actions">
-                <li><input type="submit" value="Enviar denúncia" class="primary" /></li>
-              </ul>
-            </form>
-          </section>
+         <section>
+  <h2>Faça sua denúncia</h2>
+
+  <!-- Envio via Formspree -->
+  <form action="https://formspree.io/f/mrbywwpg" method="POST" enctype="multipart/form-data" target="_blank">
+    <!-- Título do e-mail que você recebe -->
+    <input type="hidden" name="_subject" value="Nova denúncia - Observatório do Saneamento Camaçari" />
+
+    <div class="fields">
+      <div class="field half">
+        <input type="text" name="nome" id="nome" placeholder="Seu nome" required />
+      </div>
+      <div class="field half">
+        <!-- _replyto ajuda no botão de responder do seu e-mail -->
+        <input type="email" name="_replyto" id="email" placeholder="Seu e-mail" required />
+      </div>
+      <div class="field">
+        <textarea name="mensagem" id="mensagem" placeholder="Descreva o problema: falta de água, esgoto a céu aberto, alagamento, descarte irregular, etc. Informe endereço, ponto de referência, datas e anexos." required></textarea>
+      </div>
+
+      <!-- Upload de imagem ou arquivo (opcional) -->
+      <div class="field">
+        <label for="anexo">Anexo (foto/arquivo, opcional)</label>
+        <input type="file" name="anexo" id="anexo" accept="image/png, image/jpeg, application/pdf" />
+      </div>
+
+      <!-- Honeypot anti-spam (não preencher) -->
+      <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <ul class="actions">
+      <li><input type="submit" value="Enviar denúncia" class="primary" /></li>
+    </ul>
+  </form>
+
+  <!-- Alternativa por e-mail direto -->
+  <p style="margin-top:8px;">Se preferir, envie para: <a href="mailto:denuncias@seu-dominio.org?subject=Denúncia%20Saneamento%20Camaçari">denuncias@seu-dominio.org</a></p>
+</section>
+
 
           <section>
             <h2>Siga</h2>
@@ -332,3 +351,4 @@
     <script src="assets/js/main.js"></script>
   </body>
 </html>
+
