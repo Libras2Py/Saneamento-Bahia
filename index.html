@@ -6,6 +6,7 @@
 -->
 <html>
 	<head>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 		<title>Phantom by HTML5 UP</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -241,6 +242,21 @@
 			<script src="assets/js/breakpoints.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
+			<!-- No fim do <body>, imediatamente antes do </body> -->
+<div id="map" style="height: 400px; width: 100%;"></div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  // Configura o Leaflet e o mapa
+  var map = L.map('map').setView([-22.9068, -43.1729], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Exemplo: marcador
+  L.marker([-22.9068, -43.1729]).addTo(map)
+    .bindPopup('Seu texto aqui!')
+    .openPopup();
+</script>
 
 	</body>
 </html>
