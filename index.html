@@ -200,7 +200,7 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 <script>
-  // Centro aproximado de Camaçari
+  // Centro de Camaçari
   const center = [-12.696, -38.323];
 
   // Inicializa o mapa
@@ -212,56 +212,74 @@
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
+  // Polígono simplificado aproximado de Camaçari (limites municipais)
+  // Baseado em coordenadas de referência do município
+  const camacariBounds = [
+    [-12.50, -38.50],  // NO
+    [-12.50, -38.05],  // NE
+    [-12.85, -38.05],  // SE
+    [-12.85, -38.50]   // SO
+  ];
+
+  // Função para verificar se ponto está dentro de um polígono simples (bounding box)
+  function isInsideBounds(lat, lng, bounds) {
+    const minLat = Math.min(...bounds.map(p => p[0]));
+    const maxLat = Math.max(...bounds.map(p => p[0]));
+    const minLng = Math.min(...bounds.map(p => p[1]));
+    const maxLng = Math.max(...bounds.map(p => p[1]));
+    return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+  }
+
   // Utilitários
   function randBetween(min, max) { return Math.random() * (max - min) + min; }
   function jitter([lat, lng], dLat, dLng) {
     return [lat + randBetween(-dLat, dLat), lng + randBetween(-dLng, dLng)];
   }
 
-  // Fundo "frio" espalhado pela cidade
-  const backgroundPoints = [];
-  const latSpan = 0.35;
-  const lngSpan = 0.35;
-  for (let i = 0; i < 600; i++) {
-    const p = jitter(center, latSpan, lngSpan);
-    const intensity = randBetween(0.08, 0.30);
-    backgroundPoints.push([p[0], p[1], intensity]);
-  }
-
-  // Picos nas regiões solicitadas (coordenadas aproximadas)
+  // Apenas picos nas 6 regiões especificadas (sem pontos de fundo genéricos)
   const peaks = [
-    { name: 'Nova Vitória', coord: [-12.7035905, -38.3164396], base: 0.85, count: 200 },   // fonte: Travessa Nova Vitória
-    { name: 'Novo Horizonte', coord: [-12.6978610, -38.3088900], base: 0.80, count: 180 }, // fonte: Caminho Novo Horizonte
-    { name: 'Centro', coord: [-12.6963594, -38.3233512], base: 0.75, count: 200 },         // fonte: coordenadas da sede municipal
-    { name: 'Distrito de Monte Gordo', coord: [-12.6333000, -38.0833000], base: 0.85, count: 220 }, // âncora no distrito
-    { name: 'Arembepe', coord: [-12.7742700, -38.1785100], base: 0.90, count: 220 },       // Rua Direita de Arembepe (IBGE)
-    { name: 'Cascalheira', coord: [-12.7322700, -38.2984900], base: 0.80, count: 200 }     // Estrada da Cascalheira (IBGE)
+    { name: 'Nova Vitória', coord: [-12.7035905, -38.3164396], base: 0.85, count: 250 },
+    { name: 'Novo Horizonte', coord: [-12.6978610, -38.3088900], base: 0.80, count: 230 },
+    { name: 'Centro', coord: [-12.6963594, -38.3233512], base: 0.75, count: 240 },
+    { name: 'Distrito de Monte Gordo', coord: [-12.6333000, -38.0833000], base: 0.85, count: 260 },
+    { name: 'Arembepe', coord: [-12.7742700, -38.1785100], base: 0.90, count: 270 },
+    { name: 'Cascalheira', coord: [-12.7322700, -38.2984900], base: 0.80, count: 240 }
   ];
 
-  const hotPoints = [];
+  const allPoints = [];
   peaks.forEach(k => {
     for (let i = 0; i < k.count; i++) {
-      const p = jitter(k.coord, 0.030, 0.030); // espalhamento local
-      const intensity = Math.min(1, k.base + randBetween(0.0, 0.25));
-      hotPoints.push([p[0], p[1], intensity]);
+      const p = jitter(k.coord, 0.035, 0.035); // espalhamento local
+      // Verifica se está dentro dos limites de Camaçari
+      if (isInsideBounds(p[0], p[1], camacariBounds)) {
+        const intensity = Math.min(1, k.base + randBetween(0.0, 0.20));
+        allPoints.push([p[0], p[1], intensity]);
+      }
     }
   });
 
-  const allPoints = backgroundPoints.concat(hotPoints);
-
-  // Heatmap com opacidade reduzida via gradiente RGBA e minOpacity
+  // Heatmap com opacidade aumentada (minOpacity = 0.9)
   L.heatLayer(allPoints, {
-    radius: 34,
-    blur: 24,
-    minOpacity: 0.18, // reduz a opacidade geral percebida
+    radius: 38,
+    blur: 26,
+    minOpacity: 0.9,  // Opacidade alta conforme solicitado
     max: 1.0,
     gradient: {
-      0.20: 'rgba(0,0,255,0.35)',
-      0.40: 'rgba(0,255,255,0.40)',
-      0.60: 'rgba(0,255,0,0.45)',
-      0.80: 'rgba(255,165,0,0.50)',
-      1.00: 'rgba(255,0,0,0.55)'
+      0.20: 'blue',
+      0.40: 'cyan',
+      0.60: 'lime',
+      0.80: 'orange',
+      1.00: 'red'
     }
+  }).addTo(map);
+
+  // Máscara visual opcional: polígono de limite municipal
+  // (apenas para visualizar a área restrita - pode remover se desejar)
+  L.polygon(camacariBounds, {
+    color: '#333',
+    weight: 2,
+    fillOpacity: 0.0,
+    dashArray: '5, 5'
   }).addTo(map);
 
   // Legenda
@@ -270,10 +288,12 @@
     const div = L.DomUtil.create('div', 'heat-legend');
     div.innerHTML = `
       <div style="background:#fff;padding:8px 10px;border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.2);font:14px/1.2 Arial,sans-serif;">
-        <div style="margin-bottom:6px;">Índice simulado</div>
-        <div style="width:180px;height:10px;background:linear-gradient(90deg, rgba(0,0,255,0.35), rgba(0,255,255,0.40), rgba(0,255,0,0.45), rgba(255,165,0,0.50), rgba(255,0,0,0.55));border-radius:4px;"></div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;"><span>Baixo</span><span>Alto</span></div>
-        <div style="margin-top:8px;">Região com baixo índice de saneamento básico</div>
+        <div style="margin-bottom:6px;"><strong>Índice de saneamento</strong></div>
+        <div style="width:180px;height:10px;background:linear-gradient(90deg, blue, cyan, lime, orange, red);border-radius:4px;"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;">
+          <span>Baixo</span><span>Alto</span>
+        </div>
+        <div style="margin-top:8px;font-size:12px;">Regiões com baixo índice de saneamento básico</div>
       </div>
     `;
     return div;
@@ -333,6 +353,7 @@
 	</body>
 
 </html>
+
 
 
 
