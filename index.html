@@ -196,54 +196,53 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 <script>
-  var map = L.map('heatmap').setView([-12.58, -38.25], 12); // Centro de Camacari
-  
-  // Tile do OpenStreetMap
+  // Inicializa o mapa centrado em Camaçari
+  var map = L.map('heatmap').setView([-12.696, -38.323], 12);
+
+  // Camada do OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
-  
-  // Dados aleatórios nas regiões
-  var pontos = [
-    // Nova Vitória
-    [-12.622, -38.010, 0.2],
-    [-12.623, -38.011, 0.3],
-    // Novo Horizonte
-    [-12.603, -38.060, 0.4],
-    [-12.602, -38.059, 0.3],
-    // Centro
-    [-12.565, -38.036, 0.2],
-    [-12.566, -38.037, 0.2],
-    // Distrito de Monte Gordo
-    [-12.660, -38.165, 0.1],
-    [-12.661, -38.164, 0.2],
-    // Arembepe
-    [-12.617, -38.144, 0.3],
-    [-12.618, -38.145, 0.4],
-    // Cascalheira
-    [-12.583, -38.043, 0.2],
-    [-12.584, -38.044, 0.1],
+
+  // Pontos com pesos para simular variações de temperatura
+  var points = [
+    [-12.60, -38.37, 0.9],  // ponto quente
+    [-12.65, -38.30, 0.7],
+    [-12.70, -38.35, 0.8],
+    [-12.72, -38.31, 0.6],
+    [-12.68, -38.28, 0.4],  // ponto frio
+    [-12.75, -38.33, 0.3],
+    [-12.66, -38.27, 0.5],
+    [-12.69, -38.34, 0.8],
+    [-12.73, -38.29, 0.7],
+    [-12.70, -38.32, 0.9],
   ];
-  
-  // Criando a camada de calor
-  var heat = L.heatLayer(pontos, {
+
+  // Cria a camada de heatmap
+  var heat = L.heatLayer(points, {
     radius: 25,
     blur: 15,
+    maxZoom: 17,
     gradient: {
-      0.4: 'blue',
-      0.65: 'lime',
-      1: 'red'
+      0.2: 'blue',
+      0.4: 'lime',
+      0.6: 'yellow',
+      0.8: 'orange',
+      1.0: 'red'
     }
   }).addTo(map);
-  
-  // Adicionar legenda (exemplo simples)
-  var legenda = L.control({position: 'bottomright'});
-  legenda.onAdd = function (map) {
+
+  // Adiciona legenda simples
+  var legend = L.control({position: 'bottomright'});
+  legend.onAdd = function () {
     var div = L.DomUtil.create('div', 'info legend');
-    div.innerHTML = "<h4 style='margin:0; padding:0;'>Região com baixo índice de saneamento básico</h4>";
+    div.style.background = 'white';
+    div.style.padding = '6px 8px';
+    div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
+    div.innerHTML = '<h4>Regiões com índices variados</h4><i style="background: red"></i> Muito crítico<br><i style="background: orange"></i> Crítico<br><i style="background: lime"></i> Moderado<br><i style="background: blue"></i> Baixo índice';
     return div;
   };
-  legenda.addTo(map);
+  legend.addTo(map);
 </script>
 				<!-- Footer -->
 					<footer id="footer">
@@ -296,4 +295,5 @@
 			<script src="assets/js/main.js"></script>
 
 	</body>
+
 </html>
