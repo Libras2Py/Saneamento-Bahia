@@ -192,54 +192,86 @@
 							</section>
 						</div>
 					</div>
-<div id="heatmap" style="width: 100%; height: 800px; margin-top: 20px;"></div>
+<!-- No fim do <body>, antes de </body> -->
+<div id="heatmap" style="width: 100%; height: 520px; margin-top: 20px;"></div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 <script>
-  // Inicializa o mapa centrado em Camaçari
-  var map = L.map('heatmap').setView([-12.696, -38.323], 12);
+  // Centro aproximado de Camaçari
+  const center = [-12.70, -38.32];
 
-  // Camada do OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+  // Inicializa o mapa
+  const map = L.map('heatmap').setView(center, 12);
+
+  // Tile do OpenStreetMap
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
-  // Pontos com pesos para simular variações de temperatura
-  var points = [
-    [-12.60, -38.37, 0.9],  // ponto quente
-    [-12.65, -38.30, 0.7],
-    [-12.70, -38.35, 0.8],
-    [-12.72, -38.31, 0.6],
-    [-12.68, -38.28, 0.4],  // ponto frio
-    [-12.75, -38.33, 0.3],
-    [-12.66, -38.27, 0.5],
-    [-12.69, -38.34, 0.8],
-    [-12.73, -38.29, 0.7],
-    [-12.70, -38.32, 0.9],
+  // Funções utilitárias para gerar pontos
+  function randBetween(min, max) { return Math.random() * (max - min) + min; }
+  function jitter([lat, lng], dLat, dLng) {
+    return [lat + randBetween(-dLat, dLat), lng + randBetween(-dLng, dLng)];
+  }
+
+  // Gera pontos "de fundo" (mais frios) espalhados por toda a cidade
+  const backgroundPoints = [];
+  const latSpan = 0.35; // ~38 km norte-sul
+  const lngSpan = 0.35; // ~38 km leste-oeste
+  for (let i = 0; i < 600; i++) {
+    const p = jitter(center, latSpan, lngSpan);
+    const intensity = randBetween(0.10, 0.35); // frio a moderado
+    backgroundPoints.push([p[0], p[1], intensity]);
+  }
+
+  // Define alguns clusters "quentes"
+  const clusters = [
+    { c: [-12.69, -38.33], count: 220, base: 0.65 }, // região urbana central
+    { c: [-12.75, -38.20], count: 200, base: 0.70 }, // litoral/arembebe região leste
+    { c: [-12.63, -38.28], count: 180, base: 0.60 }  // setor noroeste
   ];
 
-  // Cria a camada de heatmap
-  var heat = L.heatLayer(points, {
-    radius: 25,
-    blur: 15,
-    maxZoom: 17,
+  const hotPoints = [];
+  clusters.forEach(k => {
+    for (let i = 0; i < k.count; i++) {
+      const p = jitter(k.c, 0.035, 0.035);               // espalhamento do cluster
+      const intensity = Math.min(1, k.base + randBetween(0.0, 0.3)); // intensidades mais altas
+      hotPoints.push([p[0], p[1], intensity]);
+    }
+  });
+
+  const allPoints = backgroundPoints.concat(hotPoints);
+
+  // Cria o heatmap com gradiente visível
+  const heat = L.heatLayer(allPoints, {
+    radius: 34,            // maior para visualizar em zoom 12
+    blur: 24,              // suavização
+    minOpacity: 0.3,       // garante cor mesmo em áreas frias
+    max: 1.0,              // intensidade máxima
     gradient: {
-      0.2: 'blue',
-      0.4: 'lime',
-      0.6: 'yellow',
-      0.8: 'orange',
-      1.0: 'red'
+      0.20: 'blue',
+      0.40: 'cyan',
+      0.60: 'lime',
+      0.80: 'orange',
+      1.00: 'red'
     }
   }).addTo(map);
 
-  // Adiciona legenda simples
-  var legend = L.control({position: 'bottomright'});
+  // Legenda
+  const legend = L.control({ position: 'bottomright' });
   legend.onAdd = function () {
-    var div = L.DomUtil.create('div', 'info legend');
-    div.style.background = 'white';
-    div.style.padding = '6px 8px';
-    div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
-    div.innerHTML = '<h4>Regiões com índices variados</h4><i style="background: red"></i> Muito crítico<br><i style="background: orange"></i> Crítico<br><i style="background: lime"></i> Moderado<br><i style="background: blue"></i> Baixo índice';
+    const div = L.DomUtil.create('div', 'heat-legend');
+    div.innerHTML = `
+      <div style="background:#fff;padding:8px 10px;border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.2);font:14px/1.2 Arial,sans-serif;">
+        <div style="margin-bottom:6px;"><strong>Índice simulado</strong></div>
+        <div style="width:180px;height:10px;background:linear-gradient(90deg, blue, cyan, lime, orange, red);border-radius:4px;"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;">
+          <span>Baixo</span><span>Alto</span>
+        </div>
+        <div style="margin-top:8px;">Região com baixo índice de saneamento básico</div>
+      </div>
+    `;
     return div;
   };
   legend.addTo(map);
@@ -297,4 +329,5 @@
 	</body>
 
 </html>
+
 
