@@ -213,7 +213,6 @@
   }).addTo(map);
 
   // Polígono simplificado aproximado de Camaçari (limites municipais)
-  // Baseado em coordenadas de referência do município
   const camacariBounds = [
     [-12.50, -38.50],  // NO
     [-12.50, -38.05],  // NE
@@ -236,45 +235,58 @@
     return [lat + randBetween(-dLat, dLat), lng + randBetween(-dLng, dLng)];
   }
 
-  // Apenas picos nas 6 regiões especificadas (sem pontos de fundo genéricos)
+  // Pontos de fundo com saneamento moderado a levemente ruim (0.35-0.55)
+  const backgroundPoints = [];
+  const latSpan = 0.35;
+  const lngSpan = 0.40;
+  for (let i = 0; i < 800; i++) {
+    const p = jitter(center, latSpan, lngSpan);
+    if (isInsideBounds(p[0], p[1], camacariBounds)) {
+      const intensity = randBetween(0.35, 0.55); // moderado a levemente ruim
+      backgroundPoints.push([p[0], p[1], intensity]);
+    }
+  }
+
+  // Picos nas 6 regiões especificadas (saneamento crítico)
   const peaks = [
-    { name: 'Nova Vitória', coord: [-12.7035905, -38.3164396], base: 0.85, count: 250 },
-    { name: 'Novo Horizonte', coord: [-12.6978610, -38.3088900], base: 0.80, count: 230 },
-    { name: 'Centro', coord: [-12.6963594, -38.3233512], base: 0.75, count: 240 },
-    { name: 'Distrito de Monte Gordo', coord: [-12.6333000, -38.0833000], base: 0.85, count: 260 },
-    { name: 'Arembepe', coord: [-12.7742700, -38.1785100], base: 0.90, count: 270 },
-    { name: 'Cascalheira', coord: [-12.7322700, -38.2984900], base: 0.80, count: 240 }
+    { name: 'Nova Vitória', coord: [-12.7035905, -38.3164396], base: 0.75, count: 180 },
+    { name: 'Novo Horizonte', coord: [-12.6978610, -38.3088900], base: 0.70, count: 170 },
+    { name: 'Centro', coord: [-12.6963594, -38.3233512], base: 0.68, count: 160 },
+    { name: 'Distrito de Monte Gordo', coord: [-12.6333000, -38.0833000], base: 0.78, count: 190 },
+    { name: 'Arembepe', coord: [-12.7742700, -38.1785100], base: 0.80, count: 200 },
+    { name: 'Cascalheira', coord: [-12.7322700, -38.2984900], base: 0.72, count: 180 }
   ];
 
-  const allPoints = [];
+  const hotPoints = [];
   peaks.forEach(k => {
     for (let i = 0; i < k.count; i++) {
-      const p = jitter(k.coord, 0.035, 0.035); // espalhamento local
-      // Verifica se está dentro dos limites de Camaçari
+      const p = jitter(k.coord, 0.025, 0.025); // espalhamento mais concentrado para gradual
       if (isInsideBounds(p[0], p[1], camacariBounds)) {
-        const intensity = Math.min(1, k.base + randBetween(0.0, 0.20));
-        allPoints.push([p[0], p[1], intensity]);
+        const intensity = Math.min(1, k.base + randBetween(0.0, 0.25));
+        hotPoints.push([p[0], p[1], intensity]);
       }
     }
   });
 
-  // Heatmap com opacidade aumentada (minOpacity = 0.9)
+  const allPoints = backgroundPoints.concat(hotPoints);
+
+  // Heatmap mais gradual com opacidade 0.25
   L.heatLayer(allPoints, {
-    radius: 38,
-    blur: 26,
-    minOpacity: 0.9,  // Opacidade alta conforme solicitado
+    radius: 42,         // maior para transição mais suave
+    blur: 30,           // blur maior = mais gradual
+    minOpacity: 0.25,   // opacidade reduzida conforme solicitado
     max: 1.0,
     gradient: {
-      0.20: 'blue',
-      0.40: 'cyan',
-      0.60: 'lime',
-      0.80: 'orange',
-      1.00: 'red'
+      0.30: 'blue',    // baixo
+      0.45: 'cyan',    // moderado
+      0.60: 'lime',    // moderado/ruim
+      0.75: 'yellow',  // ruim
+      0.85: 'orange',  // crítico
+      1.00: 'red'      // muito crítico
     }
   }).addTo(map);
 
   // Máscara visual opcional: polígono de limite municipal
-  // (apenas para visualizar a área restrita - pode remover se desejar)
   L.polygon(camacariBounds, {
     color: '#333',
     weight: 2,
@@ -282,18 +294,18 @@
     dashArray: '5, 5'
   }).addTo(map);
 
-  // Legenda
+  // Legenda atualizada
   const legend = L.control({ position: 'bottomright' });
   legend.onAdd = function () {
     const div = L.DomUtil.create('div', 'heat-legend');
     div.innerHTML = `
       <div style="background:#fff;padding:8px 10px;border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.2);font:14px/1.2 Arial,sans-serif;">
-        <div style="margin-bottom:6px;"><strong>Índice de saneamento</strong></div>
-        <div style="width:180px;height:10px;background:linear-gradient(90deg, blue, cyan, lime, orange, red);border-radius:4px;"></div>
+        <div style="margin-bottom:6px;"><strong>Índice de saneamento básico</strong></div>
+        <div style="width:180px;height:10px;background:linear-gradient(90deg, blue, cyan, lime, yellow, orange, red);border-radius:4px;"></div>
         <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;">
-          <span>Baixo</span><span>Alto</span>
+          <span>Baixo</span><span>Moderado</span><span>Crítico</span>
         </div>
-        <div style="margin-top:8px;font-size:12px;">Regiões com baixo índice de saneamento básico</div>
+        <div style="margin-top:8px;font-size:11px;">Áreas críticas: Nova Vitória, Novo Horizonte, Centro, Monte Gordo, Arembepe e Cascalheira</div>
       </div>
     `;
     return div;
@@ -353,6 +365,7 @@
 	</body>
 
 </html>
+
 
 
 
